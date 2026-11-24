@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>FlappyCube</title>
+	<link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    /* Import Google Font */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
+
+    /* Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: #121212;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      color: #00ffcc;
+    }
+
+    #particles-js {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: #121212;
+    }
+
+    header {
+      text-align: center;
+      color: #00ffcc;
+      margin-top: 20px;
+    }
+
+    h1 {
+      font-size: 2em;
+      text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc, 0 0 30px #00ffcc;
+    }
+
+    h2 {
+      font-size: 1.5em;
+      margin-top: 10px;
+      color: #80ffd4;
+    }
+
+    #gameCanvas {
+      border: 3px solid #00ffcc;
+      background-color: #202020;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+
+    .score, .summary {
+      color: #00ffcc;
+      font-size: 1.2em;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Particles Background -->
+  <div id="particles-js"></div>
+
+  <!-- Header Section -->
+  <header>
+    <h1>RYNx86's Workshop</h1>
+    <h2>FlappyCube</h2>
+  </header>
+
+  <!-- Score Display -->
+  <div class="score" id="score">Score: 0</div>
+
+  <!-- Game Canvas -->
+  <canvas id="gameCanvas" width="320" height="480"></canvas>
+
+  <!-- Game Over Summary -->
+  <div class="summary" id="summary" style="display: none;"></div>
+
+  <!-- JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
+    const summaryElement = document.getElementById('summary');
+
+    // Initialize particles.js background
+    particlesJS("particles-js", {
+      particles: {
+        number: { value: 60 },
+        size: { value: 3 },
+        color: { value: "#00ffcc" },
+        move: { speed: 1 },
+        line_linked: { enable: true, color: "#00ffcc" }
+      }
+    });
+
+    // Variables for Game
+    let bird = { x: 50, y: canvas.height / 2, width: 20, height: 20, velocity: 0, gravity: 0.25, lift: -5.5, color: "#00ffcc", angle: 0 };
+    let pipes = [];
+    let gameStarted = false;
+    let isGameOver = false;
+    let score = 0;
+    let startTime;
+
+    // Visual Effects
+    let cameraShakeIntensity = 0;
+    let blurEffect = false;
+    let particles = [];
+
+    // Generate Pipes
+    function generatePipes() {
+      return [
+        { x: canvas.width, y: Math.random() * (canvas.height - 150) + 75, width: 50, height: 200 },
+        { x: canvas.width + 200, y: Math.random() * (canvas.height - 150) + 75, width: 50, height: 200 }
+      ];
+    }
+
+    // Apply Camera Shake
+    function applyCameraShake() {
+      if (cameraShakeIntensity > 0) {
+        const offsetX = Math.random() * cameraShakeIntensity - cameraShakeIntensity / 2;
+        const offsetY = Math.random() * cameraShakeIntensity - cameraShakeIntensity / 2;
+        ctx.translate(offsetX, offsetY);
+        cameraShakeIntensity *= 0.9;
+        if (cameraShakeIntensity < 0.5) cameraShakeIntensity = 0;
+      }
+    }
+
+    // Create Jump Particles
+    function createJumpParticles() {
+      particles.push({
+        x: bird.x + bird.width / 2,
+        y: bird.y + bird.height,
+        size: Math.random() * 4 + 2,
+        opacity: 1,
+        speedX: -bird.velocity * 0.3,
+        speedY: Math.random() * 1 - 0.5,
+        life: 1,
+        color: "#00ffcc"
+      });
+    }
+
+    // Update Particles
+    function updateParticles() {
+      particles.forEach((particle, index) => {
+        particle.x += particle.speedX;
+        particle.y += particle.speedY;
+        particle.size *= 0.96;
+        particle.opacity *= 0.95;
+        particle.life -= 0.02;
+        if (particle.life <= 0) particles.splice(index, 1);
+      });
+    }
+
+    // Draw Particles
+    function drawParticles() {
+      particles.forEach(particle => {
+        ctx.globalAlpha = particle.opacity;
+        ctx.fillStyle = particle.color;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+    }
+
+    // Blur Effect on Collision
+    function triggerBlurEffect() {
+      blurEffect = true;
+    }
+
+    // Apply Blur Effect
+    function applyBlurEffect() {
+      if (blurEffect) {
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.globalAlpha = 1;
+        blurEffect = false;
+      }
+    }
+
+    // Main Game Loop
+    function update() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#202020";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      applyCameraShake();
+
+      // Update Bird
+      bird.velocity += bird.gravity;
+      bird.y += bird.velocity;
+
+      if (bird.velocity > 0) {
+        bird.angle += 0.04;
+      } else {
+        bird.angle = -0.3;
+      }
+
+      if (bird.y + bird.height > canvas.height || bird.y < 0) {
+        triggerBlurEffect();
+        cameraShakeIntensity = 10;
+        endGame();
+      }
+
+      // Draw Bird with rotation
+      ctx.save();
+      ctx.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
+      ctx.rotate(bird.angle);
+      ctx.fillStyle = bird.color;
+      ctx.fillRect(-bird.width / 2, -bird.height / 2, bird.width, bird.height);
+      ctx.restore();
+
+      createJumpParticles();
+      updateParticles();
+      drawParticles();
+
+      // Update Pipes and Score
+      pipes.forEach(pipe => {
+        pipe.x -= 3;
+        if (pipe.x + pipe.width < 0) {
+          pipe.x = canvas.width + 100;
+          pipe.y = Math.random() * (canvas.height - 150) + 75;
+          score++;
+        }
+
+        // Collision Detection
+        if (bird.x < pipe.x + pipe.width &&
+            bird.x + bird.width > pipe.x &&
+            (bird.y < pipe.y || bird.y + bird.height > pipe.y + pipe.height)) {
+          triggerBlurEffect();
+          cameraShakeIntensity = 10;
+          endGame();
+        }
+
+        // Draw Pipes
+        ctx.fillStyle = "#00ffcc";
+        ctx.fillRect(pipe.x, 0, pipe.width, pipe.y);
+        ctx.fillRect(pipe.x, pipe.y + pipe.height, pipe.width, canvas.height - pipe.y - pipe.height);
+      });
+
+      // Update score display
+      scoreElement.textContent = `Score: ${score}`;
+
+      applyBlurEffect();
+      ctx.restore();
+
+      if (!isGameOver) requestAnimationFrame(update);
+    }
+
+    // End Game and Show Summary
+    function endGame() {
+      isGameOver = true;
+      const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      summaryElement.innerHTML = `Game Over! <br> Score: ${score} <br> Time: ${elapsedTime}s`;
+      summaryElement.style.display = "block";
+    }
+
+    // Restart Game
+    function restartGame() {
+      isGameOver = false;
+      bird = { x: 50, y: canvas.height / 2, width: 20, height: 20, velocity: 0, gravity: 0.25, lift: -5.5, color: "#00ffcc", angle: 0 };
+      pipes = generatePipes();
+      score = 0;
+      startTime = Date.now();
+      summaryElement.style.display = "none";
+      scoreElement.textContent = `Score: 0`;
+      update();
+    }
+
+    // Handle Touch or Tap to Restart
+    canvas.addEventListener('click', () => {
+      if (isGameOver) {
+        restartGame();
+      } else {
+        bird.velocity = bird.lift;
+      }
+    });
+
+    // Start the Game when tapped
+    canvas.addEventListener('click', () => {
+      if (!gameStarted) {
+        startTime = Date.now();
+        pipes = generatePipes();
+        update();
+        gameStarted = true;
+      }
+    });
+  </script>
+</body>
+</html>

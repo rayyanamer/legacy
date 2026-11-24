@@ -1,0 +1,351 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Shooter</title>
+	<link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Flix&display=swap" rel="stylesheet">
+  <style>
+    /* General Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #121212, #0d0d0d);
+      color: white;
+      font-family: 'Poppins', sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .game-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 80vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    canvas {
+      border: 2px solid rgba(0, 255, 204, 0.9);
+      box-shadow: 0 0 20px rgba(0, 255, 204, 0.9);
+      border-radius: 10px;
+      background-color: #222;
+    }
+
+    /* Title with Neon Effect */
+    .title {
+      font-family: 'Flix', sans-serif;
+      font-size: 28px;  /* Smaller title size */
+      font-weight: bold;
+      color: #00ffcc;
+      text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc, 0 0 30px #00ffcc, 0 0 40px #ff5555;
+      margin-bottom: 20px;
+    }
+
+    /* Score and Health Container */
+    .hud-container {
+      position: absolute;
+      top: 28px;
+      left: 55%;
+      transform: translateX(-55%);
+      display: flex;
+      justify-content: space-between;
+      width: 200px;  /* Smaller width */
+      opacity: 0.75;
+    }
+
+    .score {
+      font-size: 14px;  /* Smaller font size */
+      font-weight: bold;
+      color: #00ffcc;
+    }
+
+    .health-bar-container {
+      width: 120px;  /* Smaller width */
+      height: 13px;  /* Smaller height */
+      border: 2px solid #00ffcc;
+      border-radius: 8px;
+      background-color: #333;
+    }
+
+    .health-bar {
+      height: 100%;
+      background-color: #ff5555;
+      border-radius: 6px;
+    }
+/* Copyright Text */
+.copyright {
+  position: absolute;
+  bottom: 14px; /* Adjust spacing from the bottom */
+  width: 100%;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: #888; /* Subtle gray for copyright text */
+  opacity: 0.7; /* Slightly transparent */
+}
+#particles-js {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: #121212;
+}
+  </style>
+</head>
+<body>
+<div id="particles-js"></div>
+  <div class="title">RYNx86's Workshop</div>
+  <div class="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div class="hud-container">
+      <div class="score" id="score">Score: 0</div>
+      <div class="health-bar-container">
+        <div class="health-bar" id="healthBar"></div>
+      </div>
+    </div>
+  </div>
+<script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+<script>
+  particlesJS("particles-js", {
+    particles: {
+      number: { value: 60 },
+      size: { value: 3 },
+      color: { value: "#00ffcc" },
+      move: { speed: 1 },
+      line_linked: { 
+        enable: true, 
+        color: "#00ffcc" 
+      }
+    }
+  });
+</script>
+
+  <!-- Add the copyright text at the bottom -->
+  <div class="copyright">© 2024 RYNx86. All rights reserved.</div> <!-- Replace YourGameName with your game name -->
+</body>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Adjust canvas size
+    canvas.width = window.innerWidth * 0.8;
+    canvas.height = window.innerHeight * 0.8;
+
+    const player = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      size: 20,
+      color: "#00ffcc",
+      health: 100,  // Player's health
+    };
+
+    const bullets = [];
+    const enemies = [];
+    const particles = [];
+    let score = 0;
+
+    function createEnemy() {
+      const size = Math.random() * 20 + 20;
+      const x = Math.random() < 0.5 ? 0 : canvas.width;
+      const y = Math.random() * canvas.height;
+      const speed = Math.random() * 2 + 1;
+      enemies.push({ x, y, size, speed, color: "#ff5555", angle: 0 });
+    }
+
+    function createParticles(x, y, color) {
+      for (let i = 0; i < 5; i++) {  // Reduced particle count
+        particles.push({
+          x,
+          y,
+          size: Math.random() * 4 + 2,  // Smaller particle size
+          speedX: Math.random() * 4 - 2,
+          speedY: Math.random() * 4 - 2,
+          color,
+          life: 50,
+        });
+      }
+    }
+
+    function drawNeonCircle(x, y, size, color, glowColor) {
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = glowColor;
+      ctx.fill();
+      ctx.shadowBlur = 0; // Reset shadow
+    }
+
+    function shootBullet(targetX, targetY) {
+      const angle = Math.atan2(targetY - player.y, targetX - player.x);
+      bullets.push({
+        x: player.x,
+        y: player.y,
+        size: 8,
+        speed: 8,
+        angle,
+        color: "#00ffcc",
+      });
+    }
+
+    function drawParticles() {
+      particles.forEach((p, index) => {
+        drawNeonCircle(p.x, p.y, p.size, p.color, "#00ffcc");
+        p.x += p.speedX;
+        p.y += p.speedY;
+        p.life--;
+        if (p.life <= 0) particles.splice(index, 1);
+      });
+    }
+
+    function moveEnemies() {
+      enemies.forEach((enemy) => {
+        const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+        enemy.x += Math.cos(angle) * enemy.speed;
+        enemy.y += Math.sin(angle) * enemy.speed;
+        enemy.angle = angle;
+      });
+    }
+
+    function drawEnemies() {
+      enemies.forEach((enemy) => {
+        drawNeonCircle(enemy.x, enemy.y, enemy.size, enemy.color, "#ff5555");
+      });
+    }
+
+    function updateBullets() {
+      bullets.forEach((b, bulletIndex) => {
+        b.x += Math.cos(b.angle) * b.speed;
+        b.y += Math.sin(b.angle) * b.speed;
+
+        // Check for collisions
+        enemies.forEach((enemy, enemyIndex) => {
+          const dist = Math.hypot(b.x - enemy.x, b.y - enemy.y);
+          if (dist < b.size + enemy.size / 2) {
+            createParticles(enemy.x, enemy.y, "#ff5555");
+            shakeScreen();
+            enemies.splice(enemyIndex, 1);
+            bullets.splice(bulletIndex, 1);
+            score++;
+          }
+        });
+
+        // Remove bullets out of bounds
+        if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+          bullets.splice(bulletIndex, 1);
+        }
+      });
+    }
+
+    function drawBullets() {
+      bullets.forEach((b) => {
+        drawNeonCircle(b.x, b.y, b.size, b.color, "#00ffcc");
+
+        // Add bullet trail effect
+        createParticles(b.x, b.y, "#00ffcc");
+      });
+    }
+
+    function drawPlayer() {
+      drawNeonCircle(player.x, player.y, player.size, player.color, "#00ffcc");
+    }
+
+    function drawHealthBar() {
+      const healthBar = document.getElementById("healthBar");
+      healthBar.style.width = player.health + "%";
+    }
+
+    function drawScore() {
+      const scoreElement = document.getElementById("score");
+      scoreElement.textContent = "Score: " + score;
+    }
+
+    function checkPlayerCollision() {
+  enemies.forEach((enemy, index) => {
+    const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+    if (dist < player.size + enemy.size / 2) {
+      player.health -= 10;  // Decrease health on collision
+      shakeScreen();        // Trigger screen shake
+      flashBorder();        // Flash border on damage
+      enemies.splice(index, 1);  // Remove enemy after collision
+      if (player.health <= 0) {
+        alert("Game Over!");
+        player.health = 100; // Reset health after game over
+        score = 0; // Reset score after game over
+      }
+    }
+  });
+}
+    function shakeScreen() {
+      const intensity = 5;
+      const duration = 100;
+      const startTime = performance.now();
+
+      function shake() {
+        const elapsed = performance.now() - startTime;
+        if (elapsed < duration) {
+          const offsetX = Math.random() * intensity - intensity / 2;
+          const offsetY = Math.random() * intensity - intensity / 2;
+          canvas.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+          requestAnimationFrame(shake);
+        } else {
+          canvas.style.transform = "translate(0, 0)";
+        }
+      }
+      shake();
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      moveEnemies();
+      updateBullets();
+      drawEnemies();
+      drawPlayer();
+      drawBullets();
+      drawParticles();
+      drawHealthBar();  // Update health bar
+      drawScore();  // Update score display
+      checkPlayerCollision();  // Check for player-enemy collisions
+      requestAnimationFrame(gameLoop);
+    }
+
+    canvas.addEventListener("click", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      shootBullet(x, y);
+    });
+function flashBorder() {
+  const originalColor = "rgba(0, 255, 204, 0.9)";
+  const damageColor = "#ff5555"; // Red border for damage
+
+  // Change border to the damage color
+  canvas.style.border = `2px solid ${damageColor}`;
+  canvas.style.boxShadow = `0 0 20px ${damageColor}`;
+
+  // Reset border back to original color after a short delay
+  setTimeout(() => {
+    canvas.style.border = `2px solid ${originalColor}`;
+    canvas.style.boxShadow = `0 0 20px ${originalColor}`;
+  }, 100); // Duration of the effect (100ms)
+}
+    setInterval(createEnemy, 2000);  // Create enemies every 2 seconds
+    gameLoop();  // Start the game loop
+  </script>
+</body>
+</html>

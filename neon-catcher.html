@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RYNx86's Workshop</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #121212, #1e1e1e);
+      color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+
+    h1 {
+      color: #00ffcc;
+      text-shadow: 0 0 10px #00ffcc, 0 0 20px #00e6b8;
+      margin-bottom: 20px;
+    }
+
+    #game {
+      position: relative;
+      width: 80vw;
+      height: 60vh;
+      background: #3a3a3a;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+    }
+
+    #game::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                  linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+      background-size: 20px 20px;
+      z-index: 1;
+    }
+
+    #player {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #00ffcc, #00e6b8);
+      border-radius: 50%;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 0 15px #00ffcc, 0 0 30px #00e6b8;
+      transition: box-shadow 0.3s, background 0.3s;
+    }
+
+    #player.golden {
+      background: linear-gradient(135deg, #ffcc00, #ff9900);
+      box-shadow: 0 0 15px #ffcc00, 0 0 30px #ff9900, 0 0 50px rgba(255, 204, 0, 0.5);
+    }
+
+    .falling-object {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background: linear-gradient(135deg, #ff0077, #ff00cc);
+      border-radius: 50%;
+      box-shadow: 0 0 15px #ff0077, 0 0 30px #ff00cc;
+    }
+
+    .good-ball {
+      background: linear-gradient(135deg, #00ff00, #00cc00);
+      box-shadow: 0 0 15px #00ff00, 0 0 30px #00cc00;
+    }
+
+    .dangerous-ball {
+      background: linear-gradient(135deg, #ff0000, #cc0000);
+      box-shadow: 0 0 15px #ff0000, 0 0 30px #cc0000;
+    }
+
+    .golden-ball {
+      background: linear-gradient(135deg, #ffcc00, #ff9900);
+      box-shadow: 0 0 15px #ffcc00, 0 0 30px #ff9900;
+    }
+
+    #score {
+      margin-top: 10px;
+      font-size: 1.5rem;
+      color: #00ffcc;
+    }
+
+    #missed {
+      margin-top: 0px;
+      font-size: 1.2rem;
+      color: #ff0000;
+    }
+
+    #game-over {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      color: #ff0000;
+      text-shadow: 0 0 10px #ff0000, 0 0 20px #cc0000;
+      z-index: 10;
+    }
+
+    footer {
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: #808080;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particleCanvas"></canvas>
+  <h1>RYNx86's Workshop</h1>
+  <div id="game">
+    <div id="player"></div>
+    <div id="game-over">Game Over! Tap to Restart</div>
+  </div>
+  <div id="score">Score: 0</div>
+  <div id="missed">Missed: 0 / 5</div>
+  <footer>
+    &copy; 2024 RYNx86. All rights reserved.
+  </footer>
+
+  <script>
+    const game = document.getElementById('game');
+    const player = document.getElementById('player');
+    const scoreDisplay = document.getElementById('score');
+    const missedDisplay = document.getElementById('missed');
+    const gameOverDisplay = document.getElementById('game-over');
+    let score = 0;
+    let missed = 0;
+    let gameRunning = true;
+    let goldenEffectActive = false;
+
+    let playerX = game.offsetWidth / 2;
+
+    document.addEventListener('mousemove', (event) => {
+      const gameRect = game.getBoundingClientRect();
+      let targetX = event.clientX - gameRect.left;
+      targetX = Math.max(25, Math.min(targetX, gameRect.width - 25));
+      playerX = targetX;
+    });
+
+    function movePlayer() {
+      const currentX = parseFloat(player.style.left || game.offsetWidth / 2);
+      const delta = playerX - currentX;
+      player.style.left = `${currentX + delta * 0.1}px`;
+      if (gameRunning) requestAnimationFrame(movePlayer);
+    }
+
+    movePlayer();
+
+    function createFallingObject() {
+      if (!gameRunning) return;
+
+      const object = document.createElement('div');
+      object.classList.add('falling-object');
+
+      const objectType = Math.random();
+      if (objectType < 0.1) {
+        object.classList.add('good-ball');
+      } else if (objectType < 0.2) {
+        object.classList.add('dangerous-ball');
+      } else if (objectType < 0.25) {
+        object.classList.add('golden-ball');
+      }
+
+      const startX = Math.random() * (game.offsetWidth - 30);
+      const speed = Math.random() * 2 + 2;
+      object.style.left = `${startX}px`;
+      object.style.top = `-30px`;
+
+      game.appendChild(object);
+
+      function fall() {
+        const objectY = parseFloat(object.style.top || -30);
+        let objectX = parseFloat(object.style.left || startX);
+
+        if (goldenEffectActive) {
+          const playerRect = player.getBoundingClientRect();
+          const dx = playerRect.left + playerRect.width / 2 - (objectX + 15);
+          const dy = playerRect.top + playerRect.height / 2 - (objectY + 15);
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          object.style.left = `${objectX + (dx / dist) * speed}px`;
+        }
+
+        object.style.top = `${objectY + speed}px`;
+
+        const objectRect = object.getBoundingClientRect();
+        const playerRect = player.getBoundingClientRect();
+
+        if (
+          objectRect.bottom >= playerRect.top &&
+          objectRect.top <= playerRect.bottom &&
+          objectRect.right >= playerRect.left &&
+          objectRect.left <= playerRect.right
+        ) {
+          if (object.classList.contains('dangerous-ball')) {
+            endGame();
+          } else if (object.classList.contains('golden-ball')) {
+            activateGoldenEffect();
+          } else if (object.classList.contains('good-ball')) {
+            score += 5;
+          } else {
+            score++;
+          }
+          scoreDisplay.textContent = `Score: ${score}`;
+          game.removeChild(object);
+          return;
+        }
+
+        if (objectY > game.offsetHeight) {
+          if (!object.classList.contains('dangerous-ball')) {
+            missed++;
+            missedDisplay.textContent = `Missed: ${missed} / 5`;
+            if (missed >= 5) {
+              endGame();
+            }
+          }
+          game.removeChild(object);
+          return;
+        }
+
+        requestAnimationFrame(fall);
+      }
+
+      fall();
+    }
+
+    function activateGoldenEffect() {
+      goldenEffectActive = true;
+      player.classList.add('golden');
+      setTimeout(() => {
+        goldenEffectActive = false;
+        player.classList.remove('golden');
+      }, 5000);
+    }
+
+    function endGame() {
+      gameRunning = false;
+      gameOverDisplay.style.display = 'block';
+    }
+
+    game.addEventListener('click', () => {
+      if (!gameRunning) {
+        location.reload();
+      }
+    });
+
+    setInterval(createFallingObject, 1000);
+  </script>
+</body>
+</html>

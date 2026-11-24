@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="google-adsense-account" content="ca-pub-4153645852946755">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RYNx86's Workshop</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+	<meta name="google-site-verification" content="98_RnGoQlTvwbxez2SsO19V5AOKPUVIJyK6EUqUPTNQ" />
+	<link rel="sitemap" type="application/xml" href="/sitemap.xml">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+      transition: all 0.25s ease-in-out;
+      scroll-behavior: smooth; /* Smooth scrolling */
+    }
+
+    body {
+      background: linear-gradient(135deg, #121212, #1e1e1e);
+      color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    #particles-js {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+
+    nav {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px 15px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 4px 15px rgba(0, 255, 204, 0.1);
+    }
+
+    nav a {
+      margin: 0 10px;
+      color: #00ffcc;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      position: relative;
+    }
+
+    nav a::after {
+      content: '';
+      display: block;
+      width: 0;
+      height: 2px;
+      background: #00ffcc;
+      transition: width 0.3s;
+      margin: auto;
+    }
+
+    nav a:hover::after {
+      width: 100%;
+    }
+
+    header {
+      text-align: center;
+      padding: 20px;
+      max-width: 800px;
+      animation: fadeIn 2s ease-in-out;
+    }
+
+    header h1 {
+      font-size: 2.5em;
+      color: #00ffcc;
+      letter-spacing: 1.5px;
+      text-shadow: 0 0 10px #00ffcc, 0 0 20px #00e6b8;
+      animation: glow 1.5s infinite alternate;
+    }
+
+    @keyframes glow {
+      0% {
+        text-shadow: 0 0 10px #00ffcc, 0 0 20px #00e6b8;
+      }
+      100% {
+        text-shadow: 0 0 20px #00ffcc, 0 0 40px #00e6b8;
+      }
+    }
+
+    header p {
+      font-size: 1em;
+      color: #b0b0b0;
+      margin-top: 10px;
+    }
+
+    main {
+      width: 100%;
+      max-width: 900px;
+      margin-top: 40px;
+      padding: 40px 20px;
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 0 15px rgba(0, 255, 204, 0.1);
+    }
+
+    section {
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      font-size: 2em;
+      color: #00ffcc;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px #00ffcc;
+    }
+
+    .project-item, .update-item, .source-code-item {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .project-item:hover, .update-item:hover, .source-code-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+    }
+
+    .project-title, .update-title, .source-code-title {
+      font-size: 1.4em;
+      color: #00ffcc;
+    }
+
+    .project-date, .update-date {
+      font-size: 0.8em;
+      color: #b0b0b0;
+      margin-bottom: 10px;
+    }
+
+    .play-btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: linear-gradient(90deg, #00ffcc, #00e6b8);
+      color: #121212;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: all 0.3s ease-in-out;
+      cursor: pointer;
+    }
+
+    .play-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px #00ffcc;
+      background: linear-gradient(90deg, #00e6b8, #00ffcc);
+    }
+
+    footer {
+      margin-top: auto;
+      padding: 20px;
+      text-align: center;
+      font-size: 0.9em;
+      color: #808080;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="particles-js"></div>
+
+  <nav>
+    <a href="#projects">Projects</a>
+    <a href="#updates">Updates</a>
+    <a href="#source-codes">Source Codes</a>
+  </nav>
+
+  <header>
+    <h1>RYNx86's Workshop</h1>
+    <p>Your hub for exciting projects and coding experiments!</p>
+  </header>
+
+  <main>
+    <section id="projects">
+      <h2>Projects</h2>
+      <div class="project-item" id="Flappy-Cube">
+        <div class="project-title">FlappyCube</div>
+        <div class="project-date">Released: Oct 15, 2024</div>
+        <p class="project-description">Navigate through obstacles in this addictive game!</p>
+        <a href="flappycube.html" class="play-btn">Play</a>
+      </div>
+
+      <div class="project-item" id="Neon-Shooter">
+        <div class="project-title">NeonShooter</div>
+        <div class="project-date">Released: Nov 10, 2024</div>
+        <p class="project-description">Shoot your way to victory in a neon-themed battlefield!</p>
+        <a href="neon-shooter.html" class="play-btn">Play</a>
+      </div>
+
+	<div class="project-item" id="Neon-Highway">
+        <div class="project-title">Neon Highway Rider</div>
+        <div class="project-date">Released: Dec 22, 2024</div>
+        <p class="project-description">Drive your way to Endless Adventure in a neon-themed Highway!</p>
+        <a href="neon-highway-rider.html" class="play-btn">Play</a>
+      </div>
+
+
+	<div class="project-item" id="RBZ-Coin">
+        <div class="project-title">RBZ Coin (Alpha 0.2)</div>
+        <div class="project-date">Released: Jan 7, 2025</div>
+        <p class="project-description">view the simulated price of RBZ token</p>
+        <a href="rbz.htm" class="play-btn">Play</a>
+      </div>
+
+
+	<div class="project-item" id="Neon Catcher">
+        <div class="project-title">Neon Catcher</div>
+        <div class="project-date">Released: Jan 10, 2025</div>
+        <p class="project-description">Collect as many Balls as you can!</p>
+        <a href="neon-catcher.html" class="play-btn">Play</a>
+      </div>
+
+
+	<div class="project-item" id="Gravity-Simulator">
+        <div class="project-title">Gravity Simulation Test (PreAlpha 0.3)</div>
+        <div class="project-date">Released: Jan 14, 2025</div>
+        <p class="project-description">...P H Y S I C S</p>
+        <a href="gg.html" class="play-btn">Play</a>
+      </div>
+
+
+	<div class="project-item" id="Weather App">
+        <div class="project-title">Weather App</div>
+        <div class="project-date">Released: March 8, 2025</div>
+        <p class="project-description">Just a simple Weather App</p>
+        <a href="weather-app.html" class="play-btn">Try</a>
+      </div>
+
+<div class="project-item" id="Dictionary86">
+        <div class="project-title">Dictionary86</div>
+        <div class="project-date">Released: September 8, 2025</div>
+        <p class="project-description">Just a simple Dictionary86 App</p>
+        <a href="Dictionary.html" class="play-btn">Try</a>
+      </div>
+    </section>
+
+    <section id="updates">
+      <h2>AI Projects</h2>
+      <div class="project-item" id="Frita"> <div class="project-title">Frita</div> <div class="project-date">Released: Jan 18, 2025</div> <p class="project-description">AI Chatbot for General Purpose</p> <a href="https://cdn.botpress.cloud/webchat/v2.2/shareable.html?configUrl=https://files.bpcontent.cloud/2025/01/18/16/20250118161301-DKVF1IUT.json" class="play-btn">Check it Out</a> </div>
+    </section>
+
+    <section id="source-codes">
+      <h2>Source Codes</h2>
+      <div class="source-code-item">
+        <div class="source-code-title">NeonShooter Source Code</div>
+        <p class="source-code-description">Get the full source code for the NeonShooter project.</p>
+        <a href="neonshooter-source.zip" class="play-btn">Download</a>
+      </div>
+	<div class="source-code-item">
+        <div class="source-code-title">Neon Highway Rider Source Code</div>
+        <p class="source-code-description">Get the full source code for the Neon Highway Rider project.</p>
+        <a href="neon-highway-rider-source.zip" class="play-btn">Download</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 RYNx86. All rights reserved.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+  <script>
+const projects = document.querySelectorAll('.project-item');
+  projects.forEach(project => {
+    project.addEventListener('mouseenter', () => {
+      const projectId = project.getAttribute('id');
+      history.replaceState(null, null, `#${projectId}`);
+    });
+
+    project.addEventListener('mouseleave', () => {
+      history.replaceState(null, null, ' '); // Remove the hash when the mouse leaves
+    });
+  });
+    particlesJS("particles-js", {
+      particles: {
+        number: { value: 60 },
+        size: { value: 3 },
+        color: { value: "#00ffcc" },
+        move: { speed: 1 },
+        line_linked: { enable: true, color: "#00ffcc" }
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>    <html lang="en">      <head>      
+  <meta charset="UTF-8">      
+  <title>Dictionary86</title>      
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">      
+  <style>      
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');      
+    * { margin: 0; padding: 0; box-sizing: border-box; }      
+    body {      
+      font-family: 'Poppins', sans-serif;      
+      background: linear-gradient(135deg, #0d0d0d, #1a1a1a);      
+      color: #f5f5f5;      
+      min-height: 100vh;      
+      display: flex;      
+      flex-direction: column;      
+      align-items: center;      
+      padding: 20px;      
+    }    /* Logo */      
+.logo {      
+  font-size: 2rem;      
+  font-weight: 700;      
+  text-align: center;      
+  margin: 20px 0 30px;      
+}      
+.logo span:first-child {      
+  background: linear-gradient(90deg, #00bcd4, #29ffc6);      
+  -webkit-background-clip: text;      
+  -webkit-text-fill-color: transparent;      
+  animation: glowBlue 4s linear infinite;      
+}      
+.logo span:last-child {      
+  background: linear-gradient(90deg, #ff5722, #ff7043);      
+  -webkit-background-clip: text;      
+  -webkit-text-fill-color: transparent;      
+  animation: glowRed 4s linear infinite;      
+}      
+@keyframes glowBlue {      
+  0% { text-shadow: 0 0 5px #00bcd4; }      
+  50% { text-shadow: 0 0 20px #29ffc6; }      
+  100% { text-shadow: 0 0 5px #00bcd4; }      
+}      
+@keyframes glowRed {      
+  0% { text-shadow: 0 0 5px #ff5722; }      
+  50% { text-shadow: 0 0 20px #ff7043; }      
+  100% { text-shadow: 0 0 5px #ff5722; }      
+}      /* Search */
+.search-area {
+display: flex;
+gap: 10px;
+width: 100%;
+max-width: 600px;
+position: relative;
+}
+input {
+flex: 1;
+padding: 12px;
+border-radius: 12px;
+border: none;
+background: #262626;
+color: #fff;
+font-size: 1rem;
+box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+outline: none;
+}
+button {
+padding: 12px 18px;
+border: none;
+border-radius: 12px;
+background: #00bcd4;
+font-size: 1rem;
+font-weight: 600;
+color: white;
+cursor: pointer;
+transition: 0.2s;
+box-shadow: 0 4px 10px rgba(0, 188, 212, 0.4);
+}
+button:hover { background: #0097a7; transform: translateY(-2px); }
+
+/* Suggestions */
+.suggestions {
+position: absolute;
+top: 100%;
+left: 0;
+right: 0;
+background: #1a1a1a;
+border-radius: 8px;
+margin-top: 4px;
+max-height: 180px;
+overflow-y: auto;
+box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+display: none;
+z-index: 10;
+}
+.suggestions div {
+padding: 10px;
+cursor: pointer;
+}
+.suggestions div:hover { background: #262626; }
+
+/* Result */
+.result {
+margin-top: 25px;
+background: #141414;
+padding: 20px;
+border-radius: 16px;
+box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+width: 100%;
+max-width: 900px;
+word-wrap: break-word;
+}
+.word-title { 
+  font-size: 1.8rem; 
+  font-weight: 700; 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between;  /* ✅ push word left, button right */
+}
+.phonetic { color: #aaa; font-size: 1rem; margin-top: 4px; }
+.pos { font-style: italic; color: #bbb; margin-bottom: 8px; }
+.extra { margin-top: 12px; }
+.extra b { color: #29ffc6; }
+
+/* Speaker button */
+.speak-btn {
+position: relative;
+margin-left: 10px;
+background: linear-gradient(90deg, #00bcd4, #29ffc6);
+border: none;
+border-radius: 50%;
+color: #111;
+font-size: 1.2rem;
+cursor: pointer;
+width: 40px;
+height: 40px;
+aspect-ratio: 1/1;
+display: flex;
+align-items: center;
+justify-content: center;
+box-shadow: 0 4px 12px rgba(0,188,212,0.5);
+transition: 0.2s;
+overflow: hidden;
+}
+.speak-btn:hover {
+transform: scale(1.1);
+background: linear-gradient(90deg, #29ffc6, #00bcd4);
+}
+@media (max-width: 600px) {
+.speak-btn {
+width: 32px;
+height: 32px;
+font-size: 1rem;
+margin-left: 6px;
+}
+}
+.speak-btn::after {
+content: "";
+position: absolute;
+left: 50%;
+top: 50%;
+width: 0;
+height: 0;
+background: rgba(0, 188, 212, 0.4);
+border-radius: 50%;
+transform: translate(-50%, -50%);
+opacity: 0;
+}
+.speak-btn.active::after {
+animation: ripple 0.6s ease-out forwards;
+}
+@keyframes ripple {
+0% { width: 0; height: 0; opacity: 0.7; }
+100% { width: 200%; height: 200%; opacity: 0; }
+}
+.speak-btn.error {
+background: linear-gradient(90deg, #ff5722, #ff7043);
+box-shadow: 0 0 12px rgba(255,87,34,0.8);
+}
+
+/* Word Family Flow */
+.flow {
+margin-top: 20px;
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: 8px;
+}
+.flow .node {
+padding: 8px 14px;
+border-radius: 20px;
+background: #1f1f1f;
+box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.flow .arrow { font-size: 1.2rem; color: #ff7043; }
+
+/* Image */
+.word-img {
+margin-top: 18px;
+width: 100%;
+max-height: 250px;
+border-radius: 14px;
+object-fit: cover;
+box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+display: none;
+}
+
+/* Tips */
+.tips {
+margin-top: 20px;
+padding: 12px;
+background: #1f1f1f;
+border-radius: 10px;
+font-size: 0.95rem;
+line-height: 1.5;
+box-shadow: inset 0 0 10px rgba(0,0,0,0.4);
+}
+.tips b { color: #ff7043; }
+
+/* Loading */
+.loading {
+font-size: 1.2rem;
+color: #bbb;
+font-style: italic;
+}
+
+/* Footer */
+.footer {
+margin-top: auto;
+padding: 15px;
+font-size: 0.85rem;
+color: #666;
+text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+.logo { font-size: 1.6rem; margin-bottom: 20px; }
+.search-area { flex-direction: column; }
+button { width: 100%; }
+}
+
+  </style>      
+</head>      
+<body>      
+  <div class="logo"><span>Dictionary</span><span>86</span></div>      
+  <div class="search-area">      
+    <input type="text" id="wordInput" placeholder="Enter a word..." oninput="getSuggestions(this.value)">      
+    <button onclick="searchWord()">Search</button>      
+    <div class="suggestions" id="suggestions"></div>      
+  </div>      <div class="result" id="result">Type a word to begin...</div>      <div class="footer">© 2025 Dictionary86 by RYNx86 — All Rights Reserved</div>      <script>      
+    async function searchWord(selectedWord) {      
+      const word = selectedWord || document.getElementById("wordInput").value.trim();      
+      const resultDiv = document.getElementById("result");      
+      const suggestionsDiv = document.getElementById("suggestions");      
+      suggestionsDiv.style.display = "none";      resultDiv.innerHTML = `<div class="loading">Searching.</div>`;      
+  let dots = 1;      
+  const loadingInterval = setInterval(() => {      
+    resultDiv.innerHTML = `<div class="loading">Searching${'.'.repeat(dots)}</div>`;      
+    dots = (dots % 3) + 1;      
+  }, 500);      
+
+  if (!word) {      
+    clearInterval(loadingInterval);      
+    resultDiv.innerHTML = "⚠️ Please enter a word.";      
+    return;      
+  }      
+
+  try {      
+    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);      
+    if (!response.ok) throw new Error("Not found");      
+    const data = await response.json();      
+    const entry = data[0];      
+
+    const definition = entry.meanings[0]?.definitions[0]?.definition || "No definition available.";      
+    const example = entry.meanings[0]?.definitions[0]?.example || "Example not available.";      
+    const partOfSpeech = entry.meanings[0]?.partOfSpeech || "N/A";      
+    const phonetic = entry.phonetics.find(p => p.text)?.text || "";      
+    const audio = entry.phonetics.find(p => p.audio)?.audio || null;      
+      
+    let synonymsList = [], antonymsList = [];      
+    entry.meanings.forEach(m => {      
+      if (m.synonyms) synonymsList.push(...m.synonyms);      
+      if (m.antonyms) antonymsList.push(...m.antonyms);      
+      m.definitions.forEach(d => {      
+        if (d.synonyms) synonymsList.push(...d.synonyms);      
+        if (d.antonyms) antonymsList.push(...d.antonyms);      
+      });      
+    });      
+    const synonyms = synonymsList.length ? [...new Set(synonymsList)].slice(0,8).join(", ") : "None";      
+    const antonyms = antonymsList.length ? [...new Set(antonymsList)].slice(0,8).join(", ") : "None";      
+
+    let imageUrl = "";      
+    try {      
+      const imgRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${word}`);      
+      const imgData = await imgRes.json();      
+      if (imgData?.thumbnail?.source) imageUrl = imgData.thumbnail.source;      
+    } catch {}      
+
+    const family = [entry.word];      
+    if (!entry.word.endsWith("s")) family.push(entry.word + "s");      
+    if (!entry.word.endsWith("ing")) family.push(entry.word + "ing");      
+    if (!entry.word.endsWith("ed")) family.push(entry.word + "ed");      
+    if (!entry.word.endsWith("ly")) family.push(entry.word + "ly");      
+    if (!entry.word.endsWith("tion")) family.push(entry.word + "tion");      
+
+    const tips = synonymsList.length      
+      ? `Tip: Use <b>${synonymsList[0]}</b> as a synonym of <b>${entry.word}</b> in formal writing.`      
+      : `Tip: Try using <b>${entry.word}</b> in a sentence to remember it.`;      
+
+    clearInterval(loadingInterval);      
+    resultDiv.innerHTML = `      
+      <div class="word-title">      
+        ${entry.word}      
+        ${audio ? `<button class="speak-btn" onclick="playAudio('${audio}')">🗣️</button>` : ""}      
+      </div>      
+      ${phonetic ? `<div class="phonetic">/${phonetic}/</div>` : ""}      
+      <div class="pos">${partOfSpeech}</div>      
+      <p><b>Definition:</b> ${definition}</p>      
+      <p><b>Example:</b> ${example}</p>      
+      <div class="extra"><b>Synonyms:</b> ${synonyms}</div>      
+      <div class="extra"><b>Antonyms:</b> ${antonyms}</div>      
+      <div class="flow">      
+        ${family.map((f,i)=> `<div class="node">${f}</div>${i<family.length-1?'<div class="arrow">→</div>':''}`).join("")}      
+      </div>      
+      ${imageUrl ? `<img src="${imageUrl}" alt="${entry.word}" class="word-img" style="display:block;">` : ""}      
+      <div class="tips">${tips}</div>      
+    `;      
+  } catch (err) {      
+    clearInterval(loadingInterval);      
+    resultDiv.innerHTML = "❌ Word not found.";      
+  }      
+}      
+
+function playAudio(url) {      
+  const btn = document.querySelector(".speak-btn");      
+  if (btn) {      
+    btn.classList.remove("active", "error");      
+    void btn.offsetWidth; // trigger reflow      
+    btn.classList.add("active");      
+  }      
+
+  const audio = new Audio(url);      
+  audio.play().catch(() => {      
+    if (btn) {      
+      btn.classList.add("error");      
+    }      
+  });      
+}      
+
+async function getSuggestions(query) {      
+  const suggestionsDiv = document.getElementById("suggestions");      
+  if (!query) { suggestionsDiv.style.display = "none"; return; }      
+
+  try {      
+    const res = await fetch(`https://api.datamuse.com/sug?s=${query}`);      
+    const data = await res.json();      
+    if (data.length) {      
+      suggestionsDiv.innerHTML = data.slice(0,8).map(s =>       
+        `<div onclick="searchWord('${s.word}')">${s.word}</div>`      
+      ).join("");      
+      suggestionsDiv.style.display = "block";      
+    } else {      
+      suggestionsDiv.style.display = "none";      
+    }      
+  } catch {      
+    suggestionsDiv.style.display = "none";      
+  }      
+}
+
+</script>    </body>
+
+</html>

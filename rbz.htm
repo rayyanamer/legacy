@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RBZ Beta(0.32w)</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Space+Grotesk:wght@300;500&family=Oswald:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #1a1f1c;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        header {
+            padding: 20px;
+            background-color: #1e2623;
+            color: #4da85a;
+            text-align: center;
+            font-size: 2.5em;
+            font-weight: 700;
+            border-bottom: 3px solid #4da85a;
+            font-family: 'Oswald', sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .panel {
+            background-color: #232a27;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .panel h3 {
+            margin-top: 0;
+            color: #4da85a;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 500;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .stat {
+            background-color: #1e2623;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #1e2623;
+            color: #6f8b7b;
+            border-top: 3px solid #4da85a;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4da85a;
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* Preloader styles */
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a1f1c;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+        }
+
+        .preloader .loader {
+            border: 4px solid #4da85a;
+            border-top: 4px solid transparent;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        .preloader .step {
+            margin-top: 20px;
+            color: #4da85a;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2em;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Preloader with steps -->
+    <div class="preloader" id="preloader">
+        <div class="loader"></div>
+        <div class="step" id="preloader-step">Initializing...</div>
+    </div>
+
+    <header>RBZ Beta(0.32w)</header>
+
+    <div class="container">
+        <!-- Live Chart Panel -->
+        <div class="panel">
+            <h3>Live Chart</h3>
+            <div class="chart-container">
+                <canvas id="cryptoChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Market Stats Panel -->
+        <div class="panel">
+            <h3>Market Stats</h3>
+            <div class="stats">
+                <div class="stat">
+                    <strong>Current Price</strong>
+                    <p id="current-price">$--</p>
+                </div>
+                <div class="stat">
+                    <strong>High</strong>
+                    <p id="high">$--</p>
+                </div>
+                <div class="stat">
+                    <strong>Low</strong>
+                    <p id="low">$--</p>
+                </div>
+                <div class="stat">
+                    <strong>Average</strong>
+                    <p id="average">$--</p>
+                </div>
+                <div class="stat">
+                    <strong>Market Cap</strong>
+                    <p id="market-cap">--</p>
+                </div>
+                <div class="stat">
+                    <strong>Volume</strong>
+                    <p id="volume">--</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 RBZ Viewer | All Rights Reserved</p>
+        <p>Made by <strong>RYNx86</strong></p>
+    </footer>
+
+    <!-- Popup Notification -->
+    <div class="notification" id="notification">Connected to host.ryn.86.w42i1 (111.88.171.129)</div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Hide preloader after page load
+        window.onload = () => {
+            document.getElementById('preloader').style.display = 'none';
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        };
+
+        // Get HTML elements
+        const high = document.getElementById('high');
+        const low = document.getElementById('low');
+        const average = document.getElementById('average');
+        const currentPrice = document.getElementById('current-price');
+        const marketCap = document.getElementById('market-cap');
+        const volume = document.getElementById('volume');
+        const notification = document.getElementById('notification');
+        const preloaderStep = document.getElementById('preloader-step');
+
+        // Random market data generator for RBZ
+        function getRandom(min, max) {
+            return (Math.random() * (max - min) + min).toFixed(2);
+        }
+
+        // Update market stats dynamically
+        function updateStats() {
+            const highValue = getRandom(35, 45);
+            const lowValue = getRandom(30, 34.99);
+            const avgValue = ((parseFloat(highValue) + parseFloat(lowValue)) / 2).toFixed(2);
+            const marketCapValue = `$${getRandom(1, 10)} Billion`;
+            const volumeValue = `${getRandom(500, 1000)}K`;
+
+            high.textContent = `$${highValue}`;
+            low.textContent = `$${lowValue}`;
+            average.textContent = `$${avgValue}`;
+            marketCap.textContent = marketCapValue;
+            volume.textContent = volumeValue;
+
+            // Randomize the current price between 30 and 45
+            currentPrice.textContent = `$${getRandom(30, 45)}`;
+        }
+
+        // Randomize IPs
+        const randomIPs = [
+            "192.168.1.12", "112.34.55.21", "45.89.12.55", "110.98.34.13", "177.45.87.99"
+        ];
+
+        function randomizeIP() {
+            const randomIP = randomIPs[Math.floor(Math.random() * randomIPs.length)];
+            return randomIP;
+        }
+
+        // Chart.js configuration
+        const ctx = document.getElementById('cryptoChart').getContext('2d');
+        const cryptoChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'RBZ Price (USD)',
+                    data: [],
+                    borderColor: '#4da85a',
+                    backgroundColor: 'rgba(77, 168, 90, 0.2)',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 0,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        ticks: { color: '#4da85a' },
+                        grid: { color: '#2e3b36' }
+                    },
+                    y: {
+                        ticks: { color: '#4da85a' },
+                        grid: { color: '#2e3b36' }
+                    }
+                }
+            }
+        });
+
+        // Simulating preloader steps
+        const preloaderSteps = [
+            "Initializing...",
+            "Detecting nearest server...",
+            "Fetching data from the server...",
+            "Verifying server connection...",
+            "Connection established. Syncing data..."
+        ];
+        let stepIndex = 0;
+
+        function updatePreloaderStep() {
+            if (stepIndex < preloaderSteps.length) {
+                preloaderStep.textContent = preloaderSteps[stepIndex];
+                stepIndex++;
+            } else {
+                document.getElementById('preloader').style.display = 'none';
+            }
+        }
+
+        setInterval(updatePreloaderStep, 2000);
+
+        // Update the chart dynamically
+        function updateChart() {
+            const newPrice = getRandom(30, 45);
+            const timestamp = new Date().toLocaleTimeString();
+
+            // Add new data point
+            cryptoChart.data.labels.push(timestamp);
+            cryptoChart.data.datasets[0].data.push(newPrice);
+
+            // Limit the number of points displayed
+            if (cryptoChart.data.labels.length > 20) {
+                cryptoChart.data.labels.shift();
+                cryptoChart.data.datasets[0].data.shift();
+            }
+
+            // Update the chart
+            cryptoChart.update();
+        }
+
+        // Initial load
+        updateStats();
+        setInterval(updateStats, 5000);
+        setInterval(updateChart, 2000);
+    </script>
+</body>
+</html>

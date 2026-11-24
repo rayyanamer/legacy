@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Horizon Driver</title>
+	<link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Montserrat:wght@300;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Varela+Round&display=swap');
+    body {
+      margin: 0;
+      font-family: "Varela Round", serif;
+      background: linear-gradient(135deg, #0a0a0a, #1b1b1b);
+      color: #b0b0b0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      font-family: "Varela Round", serif;
+      color: #00ffcc;
+      text-shadow: 0 0 20px #00ffcc, 0 0 40px rgba(0, 255, 204, 0.5);
+      margin: 10px 0;
+      text-align: center;
+    }
+
+    .game-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+    }
+
+    canvas {
+      border: 2px solid #00ffcc;
+      box-shadow: 0 0 20px #00ffcc, 0 0 40px rgba(0, 255, 204, 0.5);
+      background: linear-gradient(to bottom, #0f0f0f, #1c1c1c);
+    }
+
+    footer {
+      margin-top: 10px;
+      font-size: 0.8em;
+      color: #00ffcc;
+      text-shadow: 0 0 5px #00ffcc;
+      font-family: 'Orbitron', sans-serif;
+      text-align: center;
+    }
+
+    .hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.2em;
+      color: #00ffcc;
+      text-shadow: 0 0 10px #00ffcc;
+    }
+  </style>
+</head>
+<body>
+  <h1>RYNx86's Workshop</h1>
+  <div class="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div class="hud" id="hud"></div>
+  </div>
+  <footer>&copy; 2024 RYNx86's Workshop. All rights reserved.</footer>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const hud = document.getElementById("hud");
+
+    // Responsive Canvas
+    function resizeCanvas() {
+      canvas.width = window.innerWidth * 0.9;
+      canvas.height = window.innerHeight * 0.75; // Adjusted to fit in mobile view
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    // Game Variables
+    let car = {
+      x: canvas.width / 2 - 25,
+      y: canvas.height - 100,
+      width: 50,
+      height: 80,
+      currentX: canvas.width / 2 - 25,
+      targetX: canvas.width / 2 - 25,
+      blinker: "none",
+      blinkerTimer: 0
+    };
+    let obstacles = [];
+    let score = 0;
+    let highScore = 0;
+    let gameSpeed = 5;
+    let gameOver = false;
+    let roadOffset = 0;
+    const laneWidth = canvas.width / 3;
+
+    // Linear Interpolation for Smooth Movement
+    function lerp(start, end, t) {
+      return start + (end - start) * t;
+    }
+
+    // Draw Car
+    function drawCar() {
+      car.currentX = lerp(car.currentX, car.targetX, 0.1); // Smooth transition
+      ctx.fillStyle = "rgba(0, 255, 204, 0.8)";
+      ctx.shadowColor = "#00ffcc";
+      ctx.shadowBlur = 20;
+      ctx.fillRect(car.currentX, car.y, car.width, car.height);
+
+      ctx.strokeStyle = "#00ffcc";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(car.currentX, car.y, car.width, car.height);
+
+      // Draw Blinkers with Glow Effect
+      if (car.blinker === "left" || car.blinker === "right") {
+        const blinkerX =
+          car.blinker === "left" ? car.currentX - 15 : car.currentX + car.width + 5;
+        if (Math.floor(car.blinkerTimer / 15) % 2 === 0) {
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = "#ff9900";
+          ctx.fillStyle = "rgba(255, 153, 0, 0.8)";
+          ctx.fillRect(blinkerX, car.y + 25, 10, 20);
+        }
+      }
+
+      // Draw Taillights
+      const taillightY = car.y + car.height - 10;
+      ctx.fillStyle = "rgba(255, 0, 0, 0.8)";
+      ctx.shadowColor = "#ff0000";
+      ctx.shadowBlur = 15;
+      ctx.fillRect(car.currentX + 5, taillightY, 10, 5); // Left taillight
+      ctx.fillRect(car.currentX + car.width - 15, taillightY, 10, 5); // Right taillight
+
+      ctx.shadowBlur = 0;
+    }
+
+    // Draw Lane Markings
+    function drawLanes() {
+      ctx.strokeStyle = "rgba(0, 255, 204, 0.6)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([20, 10]);
+
+      for (let i = 1; i < 3; i++) {
+        const x = i * laneWidth;
+        ctx.beginPath();
+        ctx.moveTo(x, roadOffset % 40);
+        for (let y = roadOffset % 40; y <= canvas.height; y += 40) {
+          ctx.moveTo(x, y);
+          ctx.lineTo(x, y + 20);
+        }
+        ctx.stroke();
+      }
+
+      ctx.setLineDash([]);
+    }
+
+    // Draw Obstacles
+    function drawObstacles() {
+  obstacles.forEach((obstacle) => {
+    // Draw the car
+    ctx.fillStyle = "#ff3f3f";
+    ctx.shadowColor = "#ff3f3f";
+    ctx.shadowBlur = 15;
+    ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+
+    // Headlights effect
+    const gradient = ctx.createLinearGradient(
+      obstacle.x + obstacle.width / 2,
+      obstacle.y,
+      obstacle.x + obstacle.width / 2,
+      obstacle.y -100
+    );
+    gradient.addColorStop(0, "rgba(255, 255, 153, 0.8)");
+    gradient.addColorStop(1, "rgba(255, 255, 153, 0)");
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.moveTo(obstacle.x + obstacle.width * 0.1, obstacle.y); // Left beam
+    ctx.lineTo(obstacle.x + obstacle.width * 0.4, obstacle.y - 100);
+    ctx.lineTo(obstacle.x + obstacle.width * 0.6, obstacle.y - 100);
+    ctx.lineTo(obstacle.x + obstacle.width * 0.9, obstacle.y); // Right beam
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+  });
+}
+    // Update Obstacles
+    function updateObstacles() {
+      if (
+        obstacles.length === 0 ||
+        obstacles[obstacles.length - 1].y > canvas.height / 3
+      ) {
+        const lane = Math.floor(Math.random() * 3);
+        obstacles.push({
+          x: lane * laneWidth + laneWidth / 2 - 25,
+          y: -100,
+          width: 50,
+          height: 80
+        });
+      }
+
+      obstacles.forEach((obstacle) => {
+        obstacle.y += gameSpeed;
+      });
+
+      obstacles = obstacles.filter((obstacle) => obstacle.y <= canvas.height);
+    }
+
+    // Handle Collision
+    function handleCollision() {
+      obstacles.forEach((obstacle) => {
+        if (
+          car.currentX < obstacle.x + obstacle.width &&
+          car.currentX + car.width > obstacle.x &&
+          car.y < obstacle.y + obstacle.height &&
+          car.y + car.height > obstacle.y
+        ) {
+          gameOver = true;
+          if (score > highScore) highScore = score;
+        }
+      });
+    }
+
+    // Update Road Offset
+    function updateRoad() {
+      roadOffset += gameSpeed;
+    }
+
+    // Swipe Controls
+    let startX = null;
+    canvas.addEventListener("touchstart", (e) => {
+      startX = e.touches[0].clientX;
+    });
+
+    canvas.addEventListener("touchend", (e) => {
+      if (!startX) return;
+      const endX = e.changedTouches[0].clientX;
+      if (endX - startX > 50 && car.targetX < canvas.width - laneWidth) {
+        car.targetX += laneWidth;
+        car.blinker = "right";
+        car.blinkerTimer = 0;
+      } else if (startX - endX > 50 && car.targetX > laneWidth) {
+        car.targetX -= laneWidth;
+        car.blinker = "left";
+        car.blinkerTimer = 0;
+      }
+      startX = null;
+    });
+
+    // Update HUD
+    function updateHUD() {
+      hud.innerHTML = `Score: ${score} <br> High Score: ${highScore}`;
+    }
+
+    // Game Loop
+    function gameLoop() {
+      if (gameOver) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#00ffcc";
+        ctx.font = "40px 'Orbitron'";
+        ctx.textAlign = "center";
+        ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 20);
+        ctx.font = "20px 'Orbitron'";
+        ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 20);
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Update and Draw
+      updateRoad();
+      drawLanes();
+      drawCar();
+      drawObstacles();
+      updateObstacles();
+      handleCollision();
+
+      // Update Blinker Timer
+      if (car.blinker !== "none") {
+        car.blinkerTimer++;
+        if (car.blinkerTimer > 90) car.blinker = "none"; // Stop blinking after 3 blinks
+      }
+
+      // Update Score
+      score += 1;
+
+      // Update HUD
+      updateHUD();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>

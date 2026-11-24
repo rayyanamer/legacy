@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravity Simulator</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+        #controls input {
+            margin: 5px 0;
+            width: 100%;
+            padding: 5px;
+            border: none;
+            border-radius: 5px;
+        }
+        #controls label {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+<canvas id="gravityCanvas"></canvas>
+<div id="controls">
+    <label>Mass: <input type="number" id="massInput" value="50000" min="100" max="100000"></label>
+    <label>Radius: <input type="number" id="radiusInput" value="20" min="1" max="100"></label>
+    <label>Color: <input type="color" id="colorInput" value="#ffffff"></label>
+    <button id="clearBtn" style="width: 100%; padding: 8px; margin-top: 10px; border: none; background-color: #ff4c4c; color: white; border-radius: 5px;">Clear All Objects</button>
+</div>
+
+<script>
+    const canvas = document.getElementById('gravityCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const G = 0.1; // Gravitational constant (adjusted for simulation)
+
+    class Body {
+        constructor(x, y, mass, radius, color) {
+            this.x = x;
+            this.y = y;
+            this.mass = mass;
+            this.radius = radius;
+            this.color = color;
+            this.vx = Math.random() * 2 - 1;
+            this.vy = Math.random() * 2 - 1;
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        update(bodies) {
+            bodies.forEach(other => {
+                if (other !== this) {
+                    const dx = other.x - this.x;
+                    const dy = other.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance > this.radius + other.radius) {
+                        const force = (G * this.mass * other.mass) / (distance * distance);
+                        const ax = force * dx / distance / this.mass;
+                        const ay = force * dy / distance / this.mass;
+
+                        this.vx += ax;
+                        this.vy += ay;
+                    } else {
+                        this.handleCollision(other);
+                    }
+                }
+            });
+
+            this.x += this.vx;
+            this.y += this.vy;
+
+            this.checkBoundaries();
+        }
+
+        handleCollision(other) {
+            const dx = this.x - other.x;
+            const dy = this.y - other.y;
+            const angle = Math.atan2(dy, dx);
+
+            const speed1 = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            const speed2 = Math.sqrt(other.vx * other.vx + other.vy * other.vy);
+
+            this.vx = speed2 * Math.cos(angle);
+            this.vy = speed2 * Math.sin(angle);
+            other.vx = speed1 * Math.cos(angle + Math.PI);
+            other.vy = speed1 * Math.sin(angle + Math.PI);
+        }
+
+        checkBoundaries() {
+            if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+                this.vx *= -1;
+            }
+            if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+                this.vy *= -1;
+            }
+        }
+    }
+
+    const bodies = [];
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        bodies.forEach(body => {
+            body.update(bodies);
+            body.draw();
+        });
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+    // Interaction: Add new bodies on click with customizable properties
+    canvas.addEventListener('click', (event) => {
+        const mass = parseFloat(document.getElementById('massInput').value);
+        const radius = parseFloat(document.getElementById('radiusInput').value);
+        const color = document.getElementById('colorInput').value;
+        const x = event.clientX;
+        const y = event.clientY;
+        bodies.push(new Body(x, y, mass, radius, color));
+    });
+
+    // Clear all bodies
+    document.getElementById('clearBtn').addEventListener('click', () => {
+        bodies.length = 0;
+    });
+</script>
+
+</body>
+</html>
